@@ -127,6 +127,23 @@
   <div id="app" class="container">
     <h1 class="title">🎯 Daily Raid</h1>
     <div class="date">📅 {{ currentDate }}</div>
+    <div class="summary">
+        🧮 Всего баллов: <strong>{{ totalPoints }}</strong><br />
+        ⏱ Всего часов: <strong>{{ totalHours }}</strong>
+      </div>
+      <div class="progress-bar">
+        <div
+          class="progress-bar-fill"
+          :style="{
+            width: progressPercent + '%',
+            backgroundColor: progressPercent < 50 ? '#ff4d4d' : (totalPoints < 9 ? '#ffcc00' : '#4caf50')
+          }"
+        ></div>
+      </div>
+      <div class="reward" :class="{ success: totalPoints >= 9, fail: totalPoints < 9 }">
+        <p v-if="totalPoints >= 9">🏆 Ты заработал 10$ награды!</p>
+        <p v-else>⏳ Нужно минимум 9 баллов для награды</p>
+      </div>
     <div class="card">
       <div
         v-for="(task, index) in tasks"
@@ -138,28 +155,12 @@
         <input type="checkbox" :checked="task.done" />
         <label>{{ task.label }} ({{ task.points }}б)</label>
         <select v-if="task.allowHours" v-model.number="task.hours" @click.stop>
-          <option v-for="n in 13" :key="n" :value="n - 1">{{ n - 1 }} ч</option>
+          <option v-for="n in 7" :key="n" :value="n - 1">{{ n - 1 }} ч</option>
         </select>
         <span v-else-if="task.hours">⏱ {{ task.hours }} ч</span>
       </div>
     </div>
-    <div class="summary">
-      🧮 Всего баллов: <strong>{{ totalPoints }}</strong><br />
-      ⏱ Всего часов: <strong>{{ totalHours }}</strong>
-    </div>
-    <div class="progress-bar">
-      <div
-        class="progress-bar-fill"
-        :style="{
-          width: progressPercent + '%',
-          backgroundColor: progressPercent < 50 ? '#ff4d4d' : (totalPoints < 9 ? '#ffcc00' : '#4caf50')
-        }"
-      ></div>
-    </div>
-    <div class="reward" :class="{ success: totalPoints >= 9, fail: totalPoints < 9 }">
-      <p v-if="totalPoints >= 9">🏆 Ты заработал 10$ награды!</p>
-      <p v-else>⏳ Нужно минимум 9 баллов для награды</p>
-    </div>
+    
     <div class="reset">
       <button @click="resetTasks">🔄 Сбросить</button>
     </div>
