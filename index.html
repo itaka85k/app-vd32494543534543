@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Raid</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    body {
+      background: #f0f0f0;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 100%;
+      max-width: 500px;
+      margin: 2rem auto;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    .title {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 0.25rem;
+    }
+    .date {
+      text-align: center;
+      font-size: 1.3rem;
+      color: #666;
+      margin-bottom: 1rem;
+      font-weight: 900;
+    }
+    .card {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    .task {
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      padding: 0.75rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fafafa;
+      transition: background 0.2s;
+      font-size: 1.1rem;
+      cursor: pointer;
+    }
+    .task input[type="checkbox"] {
+      width: 24px;
+      height: 24px;
+      accent-color: #007bff;
+      pointer-events: none;
+    }
+    .task label {
+      margin-left: 0.75rem;
+      flex: 1;
+      user-select: none;
+      transition: all 0.3s ease;
+    }
+    .task.done label {
+      text-decoration: line-through;
+      opacity: 0.6;
+      color: #888;
+    }
+    .task select {
+      margin-left: 0.75rem;
+      padding: 0.25rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .summary {
+      text-align: center;
+      font-size: 1.2rem;
+      margin-top: 1rem;
+    }
+    .progress-bar {
+      height: 20px;
+      background-color: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 0.5rem 0;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      transition: width 0.3s ease-in-out;
+    }
+    .reward {
+      text-align: center;
+      margin-top: 0.5rem;
+      font-weight: bold;
+    }
+    .reward.success {
+      color: green;
+    }
+    .reward.fail {
+      color: red;
+    }
+    .reset {
+      margin-top: 1rem;
+      text-align: center;
+    }
+    .reset button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #ff4d4d;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <h1 class="title">🎯 Daily Raid</h1>
+    <div class="date">📅 {{ currentDate }}</div>
+    <div class="summary">
+        🧮 Всего баллов: <strong>{{ totalPoints }}</strong><br />
+        ⏱ Всего часов: <strong>{{ totalHours }}</strong>
+      </div>
+      <div class="progress-bar">
+        <div
+          class="progress-bar-fill"
+          :style="{
+            width: progressPercent + '%',
+            backgroundColor: progressPercent < 50 ? '#ff4d4d' : (totalPoints < 9 ? '#ffcc00' : '#4caf50')
+          }"
+        ></div>
+      </div>
+      <div class="reward" :class="{ success: totalPoints >= 9, fail: totalPoints < 9 }">
+        <p v-if="totalPoints >= 9">🏆 Ты заработал 10$ награды!</p>
+        <p v-else>⏳ Нужно минимум 9 баллов для награды</p>
+      </div>
+    <div class="card">
+      <div
+        v-for="(task, index) in tasks"
+        :key="index"
+        class="task"
+        :class="{ done: task.done }"
+        @click="toggleTask(index)"
+      >
+        <input type="checkbox" :checked="task.done" />
+        <label>{{ task.label }} ({{ task.points }}б)</label>
+        <select v-if="task.allowHours" v-model.number="task.hours" @click.stop>
+          <option v-for="n in 7" :key="n" :value="n - 1">{{ n - 1 }} ч</option>
+        </select>
+        <span v-else-if="task.hours">⏱ {{ task.hours }} ч</span>
+      </div>
+    </div>
+    
+    <div class="reset">
+      <button @click="resetTasks">🔄 Сбросить</button>
+    </div>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+          tasks: [],
+          currentDate: new Date().toLocaleDateString('ru-RU')
+        };
+      },
+      created() {
+        const savedTasks = localStorage.getItem('tasks');
+        if (savedTasks) {
+          this.tasks = JSON.parse(savedTasks);
+        } else {
+          this.resetTasks();
+        }
+      },
+      watch: {
+        tasks: {
+          handler(newTasks) {
+            localStorage.setItem('tasks', JSON.stringify(newTasks));
+          },
+          deep: true
+        }
+      },
+      methods: {
+        toggleTask(index) {
+          this.tasks[index].done = !this.tasks[index].done;
+        },
+        resetTasks() {
+          this.tasks = [
+            { label: "✔ Задание выполнено", points: 3, done: false, allowHours: true, hours: 0 },
+            { label: "🧠 Обучение 60+ мин", points: 2, done: false, allowHours: false, hours: 1 },
+            { label: "💪 Утр. тренировка 2ч", points: 1, done: false, allowHours: false, hours: 2 },
+            { label: "💪 Веч. тренировка 1ч", points: 1, done: false, allowHours: false, hours: 1 },
+            { label: "📓 Дневник написан", points: 1, done: false, allowHours: false, hours: 0.25 },
+            { label: "📖 Чтение книги 1ч", points: 1, done: false, allowHours: false, hours: 1 },
+            { label: "🛠 Работа над своим проектом 1ч", points: 1, done: false, allowHours: false, hours: 1 },
+            { label: "🇬🇧 Изучение английского 1ч", points: 1, done: false, allowHours: false, hours: 1 }
+          ];
+        }
+      },
+      computed: {
+        totalPoints() {
+          return this.tasks.reduce((sum, task) => task.done ? sum + task.points : sum, 0);
+        },
+        totalHours() {
+          const total = this.tasks.reduce((sum, task) => {
+            if (task.done && typeof task.hours === 'number') {
+              return sum + task.hours;
+            }
+            return sum;
+          }, 0);
+          return this.tasks.some(task => task.done) ? total.toFixed(2) : '0.00';
+        },
+        maxPoints() {
+          return this.tasks.reduce((sum, task) => sum + task.points, 0);
+        },
+        progressPercent() {
+          return Math.min(100, Math.round((this.totalPoints / this.maxPoints) * 100));
+        }
+      }
+    }).mount("#app");
+  </script>
+</body>
+</html>
